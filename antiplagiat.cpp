@@ -32,6 +32,7 @@ int main()
 
 
 	} while (0 == flag);
+	free(command);
 	return 0;
 }
 
