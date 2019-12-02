@@ -9,15 +9,28 @@ struct listOfText {
 	listOfText* pred;
 };
 
-void initAntoplagiat();
-void printTextList(listOfText *list);
-void printWord(listOfText* word);
-void clearList(listOfText* list);
-void deleteWord(listOfText *item);
+struct textTree {
+	char* word;
+	char* wordInUpperCase;
+	int count;
+	textTree* left;
+	textTree* right;
+};
 
+void initAntoplagiat(bool isUseTree);
+void printTextList(listOfText *root);
+void printWord(listOfText *word);
+void clearList(listOfText *list);
+void clearTree(textTree *root);
+void deleteWord(listOfText *item);
+void useTree();
+void useLine();
+
+bool isWordExistInTree(textTree* node, char* str);
 bool isWordExistInList(listOfText *list, char* str);
 
 int wordCount(listOfText* list);
+int wordCountInTree(textTree* root);
 
 float culcPercentOfRepetitionRate(float firsInteger, float secondInteger);
 
@@ -27,5 +40,10 @@ listOfText* loadTextFromFile(listOfText* item, const char* fileName);
 listOfText* toLastWord(listOfText* item);
 listOfText* toFirstWord(listOfText* item);
 listOfText* markSameWord(listOfText* list, const char* word);
+
+textTree* addWordInTree(textTree* root, char* word);
+textTree* loadTextTreeFromFile(textTree* item, const char* fileName);
+textTree *printTextTree(textTree *root);
+textTree* findWordsWichComparedTrees(textTree *sourceTextTree, textTree *originalTextTree);
 
 #endif

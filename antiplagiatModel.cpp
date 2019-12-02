@@ -5,9 +5,80 @@
 #include "stringHelper.h"
 #include <windows.h>
 
-void initAntoplagiat() {
+void initAntoplagiat(bool isUseTree) {
 	printf("Please entere path to file. For example 'd:\\sometext.txt'\n");
 	printf("Be attention, we work only with files which consists russian symbols.\n");
+
+	if (isUseTree)
+	{
+		useTree();
+	} else {
+		useLine();
+	}
+}
+
+void useTree() {
+	char* fileName = (char*)malloc(MAX_PATH * sizeof(char));
+	scanf_s("%s", fileName, MAX_PATH);
+
+	printf("Start load words from file: \n");
+
+	textTree* sourceTextTree = loadTextTreeFromFile(NULL, fileName);
+	//printTextTree(sourceTextTree);
+	int wordCountInSourceTextTree = wordCountInTree(sourceTextTree);
+
+	printf("Was loaded %d words \n", wordCountInSourceTextTree);
+
+	if (wordCountInSourceTextTree <= 0)
+	{
+		printf("Please check file, or load other file. \n");
+		free(fileName);
+		clearTree(sourceTextTree);
+	}
+	else {
+		free(fileName);
+
+		printf("Please enter path to file for compare (original file). For example 'd:\\some_original_text.txt' \n");
+
+		fileName = (char*)malloc(MAX_PATH * sizeof(char));
+		scanf_s("%s", fileName, MAX_PATH);
+
+		textTree* originalTextTree = loadTextTreeFromFile(NULL, fileName);
+		int wordCountInOriginalTextTree = wordCountInTree(originalTextTree);
+
+		if (wordCountInOriginalTextTree <= 0)
+		{
+			printf("Was loaded %d words \n", wordCountInOriginalTextTree);
+			printf("Please check file, or load other file. \n");
+			free(fileName);
+			clearTree(sourceTextTree);
+			clearTree(originalTextTree);
+		}
+		else {
+			textTree* listWithComparedWords = findWordsWichComparedTrees(sourceTextTree, originalTextTree);
+			int countReparidWords = wordCountInTree(listWithComparedWords);
+			int percentOfRepetitionRate = culcPercentOfRepetitionRate((float)wordCountInSourceTextTree, (float)countReparidWords);
+
+			if (percentOfRepetitionRate >= 51)
+			{
+				printf("\n This text is plagiat, percent of repetition rate - %d %", percentOfRepetitionRate);
+			}
+			else {
+				printf("\n This text is not plagiat, percent of repetition rate - %d %", percentOfRepetitionRate);
+			}
+
+			printf("\n List of words that were repeated: \n");
+			printTextTree(listWithComparedWords);
+
+			free(fileName);
+			clearTree(sourceTextTree);
+			clearTree(originalTextTree);
+			clearTree(listWithComparedWords);
+		}
+	}
+}
+
+void useLine() {
 	char* fileName = (char*)malloc(MAX_PATH * sizeof(char));
 	scanf_s("%s", fileName, MAX_PATH);
 
@@ -18,7 +89,7 @@ void initAntoplagiat() {
 	printf("Was loaded %d words \n", wordCountInSourceList);
 
 	if (wordCountInSourceList <= 0)
-	{	
+	{
 		printf("Please check file, or load other file. \n");
 		free(fileName);
 		clearList(sourceList);
@@ -76,6 +147,17 @@ void clearList(listOfText* list) {
 	}
 
 	deleteWord(list);
+}
+
+void clearTree(textTree* root) {
+	if (NULL != root)
+	{
+		clearTree(root->left);
+		clearTree(root->right);
+		free(root->word);
+		free(root->wordInUpperCase);
+		free(root);
+	}
 }
 
 void deleteWord(listOfText* item) {
@@ -143,6 +225,54 @@ listOfText* insertWordInList(listOfText* pred, const char* word) {
 		pred->next = result;
 	}
 	return (result);
+}
+
+textTree* loadTextTreeFromFile(textTree* root, const char* fileName) {
+	FILE* fileToLoad;
+
+	// buffer for read words from file 
+	char* buffer = (char*)malloc(MAX_WORD_SIZE * sizeof(char));
+	char* parser = buffer;
+	char symbol;
+	int err = fopen_s(&fileToLoad, fileName, "r");
+
+	nullStr(buffer, MAX_WORD_SIZE);
+	if (0 == err) {
+		symbol = getc(fileToLoad);
+		while (!feof(fileToLoad)) {
+			if (isDelimeter(symbol)) {
+				buffer = parser;
+
+				if (isWord(buffer, MAX_WORD_SIZE))
+				{
+					root = addWordInTree(root, buffer);
+				}
+
+				nullStr(buffer, MAX_WORD_SIZE);
+			}
+			else {
+				//@todo if symbols more than 100
+				if (symbol == ' ') continue;
+				*buffer = symbol;
+				buffer++;
+			}
+
+			symbol = getc(fileToLoad);
+		}
+		fclose(fileToLoad);
+	}
+	else {
+		printf("File not loaded, something was wrong..\n");
+	}
+	buffer = parser;
+
+	if (FALSE == isStringEmpty(buffer) && isWord(buffer, MAX_WORD_SIZE))
+	{
+		root = addWordInTree(root, buffer);
+	}
+
+	free(buffer);
+	return root;
 }
 
 listOfText* loadTextFromFile(listOfText* item, const char* fileName) {
@@ -215,6 +345,36 @@ listOfText* findWordInList(listOfText* list, const char* word) {
 	return NULL;
 }
 
+textTree* addWordInTree(textTree* node, char* word) {
+	if (NULL == node) {
+		// allocate memory for the structure
+		node = (textTree*)malloc(sizeof(struct textTree));
+		node->word = (char*)malloc(MAX_WORD_SIZE * sizeof(char));
+		strcpy_s(node->word, MAX_WORD_SIZE, word);
+
+		node->wordInUpperCase = (char*)malloc(MAX_WORD_SIZE * sizeof(char));
+		strcpy_s(node->wordInUpperCase, MAX_WORD_SIZE, word);
+		strtoupper(node->wordInUpperCase, MAX_WORD_SIZE, node->wordInUpperCase);
+
+		node->count = 0;
+		node->left = NULL;
+		node->right = NULL;
+	}
+	else {
+		strtoupper(word, MAX_WORD_SIZE, word);
+		if (0 < strcmp(node->wordInUpperCase, word)) {
+			node->left = addWordInTree(node->left, word);
+		}
+		else if (0 > strcmp(node->wordInUpperCase, word)) {
+			node->right = addWordInTree(node->right, word);
+		}
+		else {
+			node->count++;
+		}
+	}
+	return node;
+}
+
 listOfText* markSameWord(listOfText* list, const char* word) {
 	listOfText* currentWord = list;
 	list = toFirstWord(list);
@@ -245,6 +405,25 @@ bool isWordExistInList(listOfText* list, char* str) {
 	return false;
 }
 
+bool isWordExistInTree(textTree* node, char* str) {
+	if (NULL == node)
+	{
+		return false;
+	}
+
+	if (isSameWord(node->word, str))
+	{
+		return true;
+	}
+
+	if (isWordExistInTree(node->left, str) || isWordExistInTree(node->right, str))
+	{
+		return true;
+	}
+
+	return false;
+}
+
 void printWord(listOfText* item) {
 	printf("-%s- count- %d\n", item->word, item->count);
 }
@@ -257,12 +436,36 @@ void printTextList(listOfText* list) {
 	}
 };
 
+textTree* printTextTree(textTree* root) {
+	if (NULL == root)
+	{
+		return NULL;
+	}
+	printTextTree(root->left);
+	printTextTree(root->right);
+	printf("-%s- count- %d\n", root->word, root->count);
+};
+
 int wordCount(listOfText* list) {
 	int wordCount = 0;
 	list = toFirstWord(list);
 	while (NULL != list) {
 		wordCount++;
 		list = list->next;
+	}
+
+	return wordCount;
+};
+
+int wordCountInTree(textTree* root) {
+	int wordCount = 1;
+	if (NULL == root)
+	{
+		return 0;
+	} else {
+		wordCount += wordCountInTree(root->left);
+		wordCount += wordCountInTree(root->right);
+		return wordCount++;
 	}
 
 	return wordCount;
@@ -299,3 +502,36 @@ listOfText* findWordsWichCompared(listOfText* sourceList, listOfText* originalLi
 
 	return listWithComparedWords;
 };
+
+textTree* itarateTwoTree(textTree* sourceTextTree, textTree* originalTextTree, textTree* treeWithComparedWords) {
+	while (NULL != sourceTextTree) {
+		while (NULL != originalTextTree) {
+			if (0 == strcmp(sourceTextTree->wordInUpperCase, originalTextTree->wordInUpperCase)) {
+				float percentOfRepetitionRate = culcPercentOfRepetitionRate(sourceTextTree->count, originalTextTree->count);
+				bool isHightPercentOfRepetitionRate = (percentOfRepetitionRate >= 70);
+
+				if (false == isWordExistInTree(treeWithComparedWords, sourceTextTree->word) && isHightPercentOfRepetitionRate) {
+					treeWithComparedWords = addWordInTree(treeWithComparedWords, sourceTextTree->word);
+					treeWithComparedWords->count = sourceTextTree->count;
+				}
+			}
+
+			itarateTwoTree(sourceTextTree, originalTextTree->left, treeWithComparedWords);
+			itarateTwoTree(sourceTextTree, originalTextTree->right, treeWithComparedWords);
+		}
+		itarateTwoTree(sourceTextTree->left, originalTextTree, treeWithComparedWords);
+		itarateTwoTree(sourceTextTree->right, originalTextTree, treeWithComparedWords);
+	}
+
+	return treeWithComparedWords;
+};
+
+textTree* findWordsWichComparedTrees(textTree* sourceTextTree, textTree* originalTextTree) {
+	textTree* treeWithComparedWords = NULL;
+
+	textTree* sourceTextTreePoiner = sourceTextTree;
+	textTree* originalTextTreePointer = NULL;
+
+	return itarateTwoTree(sourceTextTree, originalTextTree, treeWithComparedWords);
+};
+
