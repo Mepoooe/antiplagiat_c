@@ -15,16 +15,17 @@ int main()
 
 	int flag = 0;
 	int keyPressed = 0;
-	char* command = (char*)malloc(MAX_WORD_SIZE * sizeof(char));
 
 	do {
+		char* command = (char*)malloc(MAX_WORD_SIZE * sizeof(char));
 		printf("\n Please enter command. For example: 'run_line', 'run_tree', 'show_files', 'exit'\n");
 		scanf_s("%s", command, MAX_WORD_SIZE);
 
 		if (0 == strcmp("run_line", command))
 		{
 			initAntoplagiat(false);
-		} else if ((0 == strcmp("run_tree", command))) {
+		}
+		else if ((0 == strcmp("run_tree", command))) {
 			initAntoplagiat(true);
 		}
 		else if ((0 == strcmp("show_files", command))) {
@@ -42,9 +43,9 @@ int main()
 			printf("\n You print wrong command, please enter right command. For example: 'run', 'exit'\n");
 		}
 
-
+		free(command);
 	} while (0 == flag);
-	free(command);
+
 	return 0;
 }
 

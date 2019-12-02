@@ -27,6 +27,12 @@
     <ClInclude Include="fileHelper.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="lineStructure.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="treeStructure.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -45,6 +51,12 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="fileHelper.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="lineStructure.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="treeStructure.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
